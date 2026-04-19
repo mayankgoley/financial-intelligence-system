@@ -1,0 +1,49 @@
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# envs
+venv/
+.venv/
+env/
+.env
+.env.local
+.env.*.local
+
+# editors / os
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# indexes + caches
+*.pkl
+*.pickle
+data/
+*.log
+
+# benchmark dumps
+docs/benchmark_results.json
+
+# docker volumes
+postgres_data/
+redis_data/
+qdrant_storage/
+kafka_data/
+zookeeper_data/
+
+# random junk i keep making
+*copy*.yml
+*copy*.yaml
+*.bak
+*.tmp
+scratch/
+notes.md
+TODO.txt
