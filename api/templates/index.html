@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-3xl">
+  <div class="mb-6">
+    <h1 class="text-2xl font-semibold text-slate-100 tracking-tight mb-1">Run a new analysis</h1>
+    <p class="text-sm text-slate-400">Multi-agent bull / bear debate over SEC filings, citation-grounded.</p>
+  </div>
+
+  <form class="w-full max-w-2xl mb-8" onsubmit="go(event)">
+    <label for="q" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Query</label>
+    <div class="flex gap-2">
+      <input id="q" type="text" required autocomplete="off"
+             placeholder="e.g. Analyze NVIDIA Q4 2025 earnings"
+             class="flex-1 px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-md text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition">
+      <button type="submit"
+              class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-xs font-semibold uppercase tracking-wider rounded-md transition">
+        Analyze
+      </button>
+    </div>
+    <p class="mt-2 text-xs text-slate-500">Tickers auto-detect from the query. Include a year (FY2024, Q4 2025) for strict fiscal-year filtering.</p>
+  </form>
+
+  <!-- file upload dropzone (UI only — no backend wiring yet) -->
+  <div class="border border-dashed border-slate-700 bg-slate-800/30 rounded-md p-4 mb-4 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 min-w-0">
+      <svg class="shrink-0 w-5 h-5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <div class="min-w-0">
+        <div class="text-sm text-slate-300">Drop custom filings (.pdf, .txt) here to ingest</div>
+        <div class="text-[11px] font-mono text-slate-500 mt-0.5">max 25MB · chunked + embedded into Qdrant on upload</div>
+      </div>
+    </div>
+    <label class="shrink-0 cursor-pointer px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium rounded-md transition">
+      Browse Files
+      <input type="file" accept=".pdf,.txt" class="hidden" onchange="console.log('file selected')">
+    </label>
+  </div>
+
+  <section class="border border-slate-800 rounded-md bg-slate-900 mb-4">
+    <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+      <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Latest Result</span>
+      <span class="text-[10px] font-mono text-slate-500 px-1.5 py-0.5 border border-slate-800 rounded">empty</span>
+    </div>
+    <div class="px-4 py-10 text-center font-mono text-xs text-slate-500">
+      No analysis yet. Submit a query above to start.
+    </div>
+  </section>
+
+  <div class="grid grid-cols-2 gap-3">
+    <div class="border border-slate-800 rounded-md p-3.5 bg-slate-900">
+      <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">embedding</div>
+      <div class="text-xs font-mono text-slate-200">text-embedding-3-large · 3072d</div>
+    </div>
+    <div class="border border-slate-800 rounded-md p-3.5 bg-slate-900">
+      <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">retrieval</div>
+      <div class="text-xs font-mono text-slate-200">dense + bm25 · RRF fusion</div>
+    </div>
+    <div class="border border-slate-800 rounded-md p-3.5 bg-slate-900">
+      <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">agents</div>
+      <div class="text-xs font-mono text-slate-200">bull → bear → synth → verifier</div>
+    </div>
+    <div class="border border-slate-800 rounded-md p-3.5 bg-slate-900">
+      <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">retry policy</div>
+      <div class="text-xs font-mono text-slate-200">hall &gt; 30% or wrong fy</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  console.log("index mounted");
+  function go(e) {
+    e.preventDefault();
+    const q = document.getElementById('q').value;
+    console.log("submit:", q);
+    window.location.href = `/debate?query=${encodeURIComponent(q)}&ticker=`;
+  }
+</script>
+{% endblock %}

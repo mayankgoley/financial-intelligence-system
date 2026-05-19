@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block boot_logs %}
+<div class="log-line"><span class="log-time">00:00:00</span> <span class="log-tag tag-info">[INFO]</span> stream initializing...</div>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-lg font-semibold text-slate-100 break-words mb-1">{{ query }}</h1>
+  <p class="text-xs text-slate-400">
+    ticker:
+    <span class="inline-block ml-1 px-2 py-0.5 text-slate-200 bg-slate-800 border border-slate-700 rounded font-mono text-[11px]">{{ ticker or 'auto' }}</span>
+  </p>
+</div>
+
+<!-- legacy status bar — hidden via css, kept in DOM so the SSE handler doesn't break -->
+<div id="statusBar" class="status-bar" style="display:none">
+  <span class="status-dot"></span>
+  <span id="statusText">Initializing...</span>
+</div>
+
+<div class="grid grid-cols-2 gap-3 mb-4">
+  <section class="border border-slate-800 border-l-2 border-l-emerald-500 rounded-md overflow-hidden bg-slate-900">
+    <div class="flex items-center justify-between px-4 py-2.5 border-b border-slate-800">
+      <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-100">Bull</span>
+      <span class="text-[10px] font-mono text-slate-500 px-1.5 py-0.5 border border-slate-700 rounded">claude-sonnet-4</span>
+    </div>
+    <div id="bullContent" class="p-4 min-h-[200px] text-sm text-slate-300">
+      <div class="loading">waiting...</div>
+    </div>
+  </section>
+
+  <section class="border border-slate-800 border-l-2 border-l-rose-500 rounded-md overflow-hidden bg-slate-900">
+    <div class="flex items-center justify-between px-4 py-2.5 border-b border-slate-800">
+      <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-100">Bear</span>
+      <span class="text-[10px] font-mono text-slate-500 px-1.5 py-0.5 border border-slate-700 rounded">claude-haiku-4.5</span>
+    </div>
+    <div id="bearContent" class="p-4 min-h-[200px] text-sm text-slate-300">
+      <div class="loading">waiting...</div>
+    </div>
+  </section>
+
+  <section class="border border-slate-800 border-l-2 border-l-sky-500 rounded-md overflow-hidden bg-slate-900">
+    <div class="flex items-center justify-between px-4 py-2.5 border-b border-slate-800">
+      <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-100">Synthesis</span>
+      <span class="text-[10px] font-mono text-slate-500 px-1.5 py-0.5 border border-slate-700 rounded">claude-sonnet-4</span>
+    </div>
+    <div id="synthContent" class="p-4 min-h-[200px] text-sm text-slate-300">
+      <div class="loading">waiting...</div>
+    </div>
+  </section>
+
+  <section class="border border-slate-800 border-l-2 border-l-amber-500 rounded-md overflow-hidden bg-slate-900">
+    <div class="flex items-center justify-between px-4 py-2.5 border-b border-slate-800">
+      <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-100">Verifier</span>
+      <span class="text-[10px] font-mono text-slate-500 px-1.5 py-0.5 border border-slate-700 rounded">claude-sonnet-4</span>
+    </div>
+    <div id="verifyContent" class="p-4 min-h-[200px] text-sm text-slate-300">
+      <div class="loading">waiting...</div>
+    </div>
+  </section>
+</div>
+
+<section id="finalResult" class="border border-slate-800 border-l-2 border-l-teal-400 rounded-md overflow-hidden bg-slate-900" style="display:none">
+  <div class="flex items-center justify-between px-4 py-2.5 border-b border-slate-800">
+    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-100">Verified Output</span>
+    <span class="text-[10px] font-mono text-slate-500 px-1.5 py-0.5 border border-slate-700 rounded">final</span>
+  </div>
+  <div id="finalContent" class="p-4 text-sm text-slate-300"></div>
+</section>
+
+<script>
+    const debateQuery = {{ query | tojson }};
+    const debateTicker = {{ ticker | tojson }};
+
+    const source = new EventSource(`/stream?query=${encodeURIComponent(debateQuery)}&ticker=${encodeURIComponent(debateTicker)}`);
+    const statusBar = document.getElementById('statusBar');
+    const statusText = document.getElementById('statusText');
+    const statusDot = statusBar.querySelector('.status-dot');
+
+    function showStatus(text, type) {
+        statusBar.style.display = 'flex';
+        statusBar.className = 'status-bar' + (type ? ' status-' + type : '');
+        statusText.textContent = text;
+    }
+
+    let hasError = false;
+
+    source.onmessage = function (event) {
+        if (event.data === '[DONE]') {
+            if (!hasError) statusBar.style.display = 'none';
+            source.close();
+            return;
+        }
+
+        const data = JSON.parse(event.data);
+        const agent = data.agent;
+        const status = data.status;
+
+        if (agent === 'system') {
+            const msg = data.data?.message || '';
+            if (status === 'checking') showStatus(msg, '');
+            else if (status === 'info') showStatus(msg, '');
+            else if (status === 'ready') showStatus(msg, 'success');
+            else if (status === 'error') showStatus(msg, 'error');
+            else if (status === 'ingesting') showStatus(msg, '');
+            return;
+        }
+
+        if (agent === 'retriever') {
+            if (status === 'running') showStatus('Searching documents...', '');
+            if (status === 'complete') showStatus(`Found ${data.data?.chunks || 0} relevant chunks`, 'success');
+            return;
+        }
+
+        if (status === 'running' || status === 'waiting') {
+            const el = document.getElementById(agent + 'Content');
+            if (el) el.innerHTML = '<div class="loading spinning">Analyzing</div>';
+        }
+
+        if (status === 'complete' && data.data) {
+            if (agent === 'bull') {
+                document.getElementById('bullContent').innerHTML = renderBull(data.data);
+                showStatus('Bull complete — Bear analyzing...', '');
+            } else if (agent === 'bear') {
+                document.getElementById('bearContent').innerHTML = renderBear(data.data);
+                showStatus('Bear complete — Synthesis weighing perspectives...', '');
+            } else if (agent === 'synthesis') {
+                document.getElementById('synthContent').innerHTML = renderSynthesis(data.data);
+                showStatus('Synthesis complete — Verifier checking claims...', '');
+            } else if (agent === 'verifier') {
+                document.getElementById('verifyContent').innerHTML = renderVerifier(data.data);
+                showStatus('Verification complete', 'success');
+            } else if (agent === 'final') {
+                document.getElementById('finalResult').style.display = 'block';
+                document.getElementById('finalContent').innerHTML = renderFinal(data.data);
+                statusBar.style.display = 'none';
+            }
+        }
+
+        if (agent === 'error') {
+            hasError = true;
+            showStatus('Error: ' + (data.data?.message || 'Unknown error'), 'error');
+            ['bullContent', 'bearContent', 'synthContent', 'verifyContent'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.querySelector('.loading')) {
+                    el.innerHTML = '<div style="color:var(--text-muted);padding:12px;font-size:14px">No data available</div>';
+                }
+            });
+        }
+    };
+
+    source.onerror = function () {
+        showStatus('Connection lost. Try refreshing the page.', 'error');
+        source.close();
+    };
+
+    function renderBull(d) {
+        let html = `<div class="thesis">${d.thesis_statement || ''}</div>`;
+        (d.supporting_points || []).forEach(p => {
+            html += `<div class="claim"><strong>${p.claim}</strong><br><small>${(p.chunk_ids || []).join(', ')}</small></div>`;
+        });
+        return html;
+    }
+    function renderBear(d) {
+        let html = `<div class="assessment">${d.overall_assessment || ''}</div>`;
+        (d.challenges || []).forEach(c => {
+            html += `<div class="challenge ${c.severity}"><strong>${c.original_claim}</strong><br>${c.challenge}<br><small>${c.challenge_type}</small></div>`;
+        });
+        return html;
+    }
+    function renderSynthesis(d) {
+        let indicator = d.recommendation === 'BULLISH' ? '&#x25CF; ' : d.recommendation === 'BEARISH' ? '&#x25CF; ' : '&#x25CF; ';
+        let color = d.recommendation === 'BULLISH' ? 'var(--emerald)' : d.recommendation === 'BEARISH' ? 'var(--coral)' : 'var(--amber)';
+        return `<div class="recommendation" style="color:${color}">${indicator}${d.recommendation} <span style="font-weight:500;font-size:14px;color:var(--text-secondary)">${((d.confidence || 0) * 100).toFixed(0)}% confidence</span></div><p style="color:var(--text-secondary);font-size:14px;line-height:1.7">${d.thesis_summary || ''}</p>`;
+    }
+    function renderVerifier(d) {
+        let rateColor = (d.rate || 0) < 0.15 ? 'var(--emerald)' : (d.rate || 0) < 0.4 ? 'var(--amber)' : 'var(--coral)';
+        return `<div class="rate" style="color:${rateColor}">Hallucination Rate: ${((d.rate || 0) * 100).toFixed(1)}%</div><div style="margin-top:8px;font-size:13px;color:var(--text-muted)">Flags: ${d.flags || 0}${d.reasoning_flags ? ' · Reasoning: ' + d.reasoning_flags : ''}</div>`;
+    }
+    function renderFinal(d) {
+        let color = d.recommendation === 'BULLISH' ? 'var(--emerald)' : d.recommendation === 'BEARISH' ? 'var(--coral)' : 'var(--amber)';
+        let html = `<div class="recommendation" style="color:${color}">&#x25CF; ${d.recommendation || 'N/A'} <span style="font-weight:500;font-size:14px;color:var(--text-secondary)">${((d.confidence || 0) * 100).toFixed(0)}% confidence</span></div>`;
+        html += `<p style="margin:12px 0;color:var(--text-secondary);font-size:14px;line-height:1.7">${d.thesis_summary || ''}</p>`;
+        html += `<div class="stats">Hallucination Rate: ${((d.hallucination_rate || 0) * 100).toFixed(1)}% · Flagged Claims: ${d.flags_count || 0}</div>`;
+        return html;
+    }
+
+    // --- additive terminal logger, doesn't touch the SSE handler above ---
+    console.log("stream mounted");
+    const term = document.getElementById('terminal');
+    function tlog(msg, kind) {
+      const t = new Date().toLocaleTimeString('en-GB', { hour12: false });
+      const tagMap = { ok: 'OK', err: 'ERR', warn: 'WARN', info: 'INFO', svc: 'SVC' };
+      const clsMap = { ok: 'tag-ok', err: 'tag-err', warn: 'tag-tip', info: 'tag-info', svc: 'tag-svc' };
+      const label = tagMap[kind] || 'INFO';
+      const cls = clsMap[kind] || 'tag-info';
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.innerHTML = '<span class="log-time">' + t + '</span> <span class="log-tag ' + cls + '">[' + label + ']</span> ' + msg;
+      term.appendChild(line);
+      // temp fix for scroll, scrollTop wasn't sticking otherwise
+      term.scrollTop = term.scrollHeight;
+    }
+    tlog('connecting · query="' + debateQuery + '" ticker="' + (debateTicker || '(auto)') + '"', 'info');
+    source.addEventListener('message', function (e) {
+      if (e.data === '[DONE]') { tlog('stream closed', 'ok'); return; }
+      try {
+        const d = JSON.parse(e.data);
+        let extra = '';
+        if (d.data?.message) extra = ' · ' + d.data.message;
+        else if (d.data?.chunks !== undefined) extra = ' · chunks=' + d.data.chunks + ' (' + (d.data.timing?.total_ms || '?') + 'ms)';
+        else if (d.data?.rate !== undefined) extra = ' · hall=' + (d.data.rate * 100).toFixed(1) + '% flags=' + (d.data.flags || 0);
+        const kind = (d.status === 'error' || d.agent === 'error') ? 'err'
+                  : (d.status === 'complete' || d.status === 'ready') ? 'ok' : 'info';
+        tlog(d.agent + ' · ' + d.status + extra, kind);
+      } catch (err) {
+        console.log("parse err", err);
+        tlog('parse error: ' + e.data, 'err');
+      }
+    });
+    source.addEventListener('error', function () {
+      console.log("sse error event");
+      tlog('connection lost', 'err');
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>financial-intelligence-system</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body class="h-screen flex flex-col bg-slate-900 text-slate-200 font-sans antialiased">
+
+<!-- ─── top nav ─── -->
+<header class="h-14 shrink-0 flex items-center justify-between px-4 border-b border-slate-800 bg-slate-900">
+  <div class="flex items-baseline gap-3">
+    <span class="font-mono font-semibold text-sm text-slate-100 tracking-tight">financial-intelligence-system</span>
+    <span class="font-mono text-xs text-slate-500">dev · localhost</span>
+  </div>
+  <nav class="flex items-center gap-1 text-sm">
+    <a href="/" class="px-3 py-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded transition-colors">Overview</a>
+  </nav>
+</header>
+
+<!-- ─── 3-col body ─── -->
+<div class="flex-1 grid grid-cols-12 min-h-0">
+
+  <!-- left: recent analyses -->
+  <aside class="col-span-2 border-r border-slate-800 bg-slate-900 overflow-y-auto p-4">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Recent Analyses</h2>
+      <span class="text-[10px] font-mono text-slate-500 px-1.5 py-0.5 border border-slate-800 rounded">6</span>
+    </div>
+    <!-- TODO: hook up to a /history endpoint, hardcoded for now -->
+    <div class="space-y-1">
+      <a href="/debate?query=NVDA%20Q4%202025&ticker=NVDA"
+         class="block p-3 rounded-md text-slate-400 hover:text-slate-50 hover:bg-slate-800 border-l-2 border-emerald-500/70 transition-colors">
+        <div class="text-sm font-medium text-slate-200">NVDA · Q4 2025</div>
+        <div class="text-[11px] font-mono text-slate-500 mt-1 truncate">
+          <span class="text-slate-400">NVDA</span> · 2025-04-15 · <span class="text-emerald-400">8%</span>
+        </div>
+      </a>
+      <a href="/debate?query=AAPL%2010-K%20FY2024&ticker=AAPL"
+         class="block p-3 rounded-md text-slate-400 hover:text-slate-50 hover:bg-slate-800 border-l-2 border-emerald-500/70 transition-colors">
+        <div class="text-sm font-medium text-slate-200">AAPL · 10-K FY24</div>
+        <div class="text-[11px] font-mono text-slate-500 mt-1 truncate">
+          <span class="text-slate-400">AAPL</span> · 2025-04-12 · <span class="text-emerald-400">12%</span>
+        </div>
+      </a>
+      <a href="/debate?query=MSFT%20cloud%20FY2024&ticker=MSFT"
+         class="block p-3 rounded-md text-slate-400 hover:text-slate-50 hover:bg-slate-800 border-l-2 border-emerald-500/70 transition-colors">
+        <div class="text-sm font-medium text-slate-200">MSFT · cloud FY24</div>
+        <div class="text-[11px] font-mono text-slate-500 mt-1 truncate">
+          <span class="text-slate-400">MSFT</span> · 2025-04-10 · <span class="text-emerald-400">5%</span>
+        </div>
+      </a>
+      <a href="/debate?query=TSLA%20margin&ticker=TSLA"
+         class="block p-3 rounded-md text-slate-400 hover:text-slate-50 hover:bg-slate-800 border-l-2 border-orange-500 transition-colors">
+        <div class="text-sm font-medium text-slate-200">TSLA · margin</div>
+        <div class="text-[11px] font-mono text-slate-500 mt-1 truncate">
+          <span class="text-slate-400">TSLA</span> · 2025-04-09 · <span class="text-orange-400">22%</span>
+        </div>
+        <div class="inline-block mt-1.5 text-[9px] font-mono uppercase tracking-wider text-orange-400 bg-orange-500/10 border border-orange-500/30 px-1.5 py-0.5 rounded">retried 2/2</div>
+      </a>
+      <a href="/debate?query=GOOGL%20cloud%20rev&ticker=GOOGL"
+         class="block p-3 rounded-md text-slate-400 hover:text-slate-50 hover:bg-slate-800 border-l-2 border-emerald-500/70 transition-colors">
+        <div class="text-sm font-medium text-slate-200">GOOGL · cloud rev</div>
+        <div class="text-[11px] font-mono text-slate-500 mt-1 truncate">
+          <span class="text-slate-400">GOOGL</span> · 2025-04-07 · <span class="text-emerald-400">9%</span>
+        </div>
+      </a>
+      <a href="/debate?query=AMZN%20AWS%20segment&ticker=AMZN"
+         class="block p-3 rounded-md text-slate-400 hover:text-slate-50 hover:bg-slate-800 border-l-2 border-emerald-500/70 transition-colors">
+        <div class="text-sm font-medium text-slate-200">AMZN · AWS</div>
+        <div class="text-[11px] font-mono text-slate-500 mt-1 truncate">
+          <span class="text-slate-400">AMZN</span> · 2025-04-05 · <span class="text-emerald-400">14%</span>
+        </div>
+      </a>
+    </div>
+  </aside>
+
+  <!-- center: main content -->
+  <main class="col-span-7 overflow-y-auto p-8 bg-slate-900">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- right: system logs (slate-950) -->
+  <aside class="col-span-3 flex flex-col min-h-0 border-l border-slate-800 bg-slate-950">
+    <div class="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-800">
+      <h2 class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">System Logs</h2>
+      <span class="text-[10px] font-mono text-slate-500 px-1.5 py-0.5 border border-slate-800 rounded">live</span>
+    </div>
+    <div id="terminal" class="flex-1 overflow-y-auto p-4 font-mono text-[11.5px] leading-relaxed text-slate-400">
+      {% block boot_logs %}
+      <div class="log-line"><span class="log-time">00:00:00</span> <span class="log-tag tag-ok">[OK]</span> ready. submit a query to start.</div>
+      <div class="log-line"><span class="log-time">00:00:00</span> <span class="log-tag tag-svc">[SVC]</span> qdrant:6333 · postgres:5433 · redis:6379</div>
+      <div class="log-line"><span class="log-time">00:00:00</span> <span class="log-tag tag-svc">[SVC]</span> openai/text-embedding-3-large · claude-sonnet-4 + haiku-4-5</div>
+      <div class="log-line"><span class="log-time">00:00:00</span> <span class="log-tag tag-tip">[TIP]</span> include a year (FY2024, Q4 2025) for strict fiscal-year filtering.</div>
+      <div class="log-line"><span class="log-time">00:00:00</span> <span class="log-tag tag-info">[INFO]</span> first hit per ticker triggers SEC EDGAR ingest (~30-60s).</div>
+      {% endblock %}
+    </div>
+    <div class="shrink-0 flex items-center justify-between gap-3 px-4 py-2 border-t border-slate-800 font-mono text-[10px] text-slate-500">
+      <span>stream: <span class="text-slate-300">SSE</span></span>
+      <span>retries: <span class="text-slate-300">0/2</span></span>
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>

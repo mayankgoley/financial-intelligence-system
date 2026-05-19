@@ -1,0 +1,108 @@
+:root {
+  /* aliases referenced by inline style="color:var(--...)" in unchanged renderXxx fns */
+  --emerald:        #34d399;
+  --coral:          #f87171;
+  --amber:          #fbbf24;
+  --cyan:           #38bdf8;
+  --text-secondary: #94a3b8;
+  --text-muted:     #64748b;
+}
+
+/* hide the legacy SSE status bar — kept in DOM so handler doesn't crash */
+#statusBar { display: none !important; }
+
+.thesis,
+.assessment {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-left: 2px solid #334155;
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.55;
+  color: #e2e8f0;
+}
+
+.claim,
+.challenge {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-left: 2px solid #334155;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin: 8px 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #cbd5e1;
+}
+.claim strong,
+.challenge strong {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+.claim small,
+.challenge small {
+  display: inline-block;
+  margin-top: 6px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  color: #64748b;
+}
+.challenge.high   { border-left-color: #f87171; }
+.challenge.medium { border-left-color: #fb923c; }
+.challenge.low    { border-left-color: #64748b; }
+
+.recommendation {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+}
+.rate {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 14px;
+  font-weight: 600;
+}
+.stats {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.loading {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.log-line {
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 1px 0;
+}
+.log-time {
+  color: #475569;
+  margin-right: 6px;
+}
+.log-tag {
+  display: inline-block;
+  min-width: 52px;
+  font-weight: 500;
+  margin-right: 4px;
+}
+.tag-ok   { color: #34d399; }
+.tag-svc  { color: #38bdf8; }
+.tag-info { color: #38bdf8; }
+.tag-tip  { color: #fb923c; }
+.tag-warn { color: #fbbf24; }
+.tag-err  { color: #f87171; }
