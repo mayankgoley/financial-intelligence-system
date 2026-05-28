@@ -1,45 +1,39 @@
-# financial-intelligence-system
+# financial intelligence system
 
-Multi-agent bull/bear/synthesis debate over SEC filings with a per-claim hallucination check and a live market-data sidecar.
+Multi agent bull versus bear debate over SEC filings with a per claim hallucination check and a live market data sidecar.
 
-## architecture / stack
+## architecture and stack
 
-- ingestion: pulls 10-K / 10-Q from SEC EDGAR, chunks via langchain splitter, embeds with `text-embedding-3-large`, indexes into Qdrant + a pickled BM25.
-- retrieval: hybrid dense + BM25 with RRF fusion, plus a post-rerank fiscal-year filter.
-- agents: LangGraph state machine — bull → bear → synthesis → verifier — with a conditional retry edge that re-pulls chunks under a strict year filter if the verifier flags hallucinations.
-- api: FastAPI + SSE, Jinja2 templates, Tailwind via CDN.
-- python 3.12 · FastAPI · LangGraph · LangChain
-- OpenAI (embeddings) · Anthropic Claude (agents — sonnet for bull/synth/verify, haiku for bear)
-- Qdrant (vectors) · BM25 (keyword) · Postgres (run logs) · Redis (semantic cache)
-- yfinance (live market data)
-- docker compose for local infra
+* ingestion: pulls 10K and 10Q forms from SEC EDGAR. Chunks via langchain splitter. Embeds with OpenAI large models and indexes into Qdrant plus a pickled BM25.
+* retrieval: hybrid dense and BM25 with RRF fusion, plus a post rerank fiscal year filter.
+* agents: LangGraph state machine moving from bull to bear to synthesis to verifier. Includes a conditional retry edge that pulls chunks again under a strict year filter if the verifier flags hallucinations.
+* api: FastAPI with Server Sent Events, Jinja2 templates, and Tailwind via CDN.
+* core: Python 3.12, FastAPI, LangGraph, LangChain
+* models: OpenAI for embeddings, Anthropic Claude sonnet for the bull and synthesis and verify agents, haiku for the bear agent
+* infra: Qdrant for vectors, BM25 for keywords, Postgres for run logs, Redis for semantic cache, yfinance for live market data, docker compose for local setup.
 
 ## local setup
 
-```bash
-cp .env.example .env
-# fill OPENAI_API_KEY and ANTHROPIC_API_KEY
+Copy the env example file to a new env file.
+Fill in your OPENAI API KEY and ANTHROPIC API KEY.
 
-docker compose up -d           # postgres, redis, qdrant, kafka, zookeeper
-pip install -r requirements.txt
+Start your docker containers for postgres, redis, qdrant, kafka, and zookeeper.
+Install your requirements via pip.
+Run the database python module once to create your tables.
+Start the uvicorn server on port 8000 with reload enabled.
 
-python -m api.database         # one-time, creates tables
+Open localhost:8000 and submit a query. The first hit per ticker auto ingests filings from EDGAR and takes about 30 to 60 seconds. Subsequent queries hit Qdrant directly.
 
-uvicorn api.main:app --reload --port 8000
-```
+Postgres is mapped to host port 5433 because port 5432 was taken on my dev box. The env file matches this.
 
-Open http://localhost:8000 and submit a query. First hit per ticker auto-ingests filings from EDGAR (~30-60s); subsequent queries hit Qdrant directly.
+## known issues and todo
 
-Postgres is mapped to host port `5433` (port 5432 was taken on the dev box). The `.env` matches.
-
-## known issues / todo
-
-- SEC EDGAR rate limit is annoying. Currently a flat `time.sleep(0.15)` between requests in `EdgarClient._rate_limit`. Fine for serial ingestion, gets 403'd if you parallelize. Should swap in a token bucket.
-- LangGraph retry edge sometimes loops too many times — when the model keeps citing wrong fiscal-year chunks the full bull→bear→synth→verify chain runs again. Capped at 2 in `should_retry`; if it still hallucinates after that we just ship the flagged output.
-- SSE stream sometimes drops connection on long analysis runs (~90s+). Browser shows "Connection lost", refresh recovers state. Haven't tracked down whether it's uvicorn keep-alive or the executor.
-- BM25 index is a pickle on disk (`data/bm25_index.pkl`). Two parallel ingestion runs will race; one wins, the other's chunks vanish from keyword search until next rebuild.
-- `fiscal_year=0` legacy chunks silently bypass the year filter. There's a one-shot `ChunkPipeline.patch_fiscal_years_in_qdrant()` repair function but it needs a manual run.
-- Reranker is just an RRF passthrough — CrossEncoder import was killing startup time so the class is stubbed. Plug a real one in once we have a GPU box.
-- yfinance returns `info={}` randomly. No caching either, so every analysis re-fetches.
-- Anthropic spend isn't bounded per query. Cost runs $0.10–$0.30 per analysis depending on retry count.
-- Top-nav links got reduced to "Overview" only — Data Sources and User Guide pages were never built.
+* SEC EDGAR rate limit is annoying. I just put a flat sleep between requests in the rate limit function. It works fine for serial ingestion but throws forbidden errors if you parallelize. I should swap in a token bucket eventually.
+* LangGraph retry edge sometimes loops too many times. When the model keeps citing wrong fiscal year chunks the full agent chain runs again. I capped it at 2 in the retry function. If it still hallucinates after that we just ship the flagged output.
+* The server stream sometimes drops connection on long analysis runs past 90 seconds. The browser shows connection lost and a refresh recovers state. I have not tracked down whether it is the uvicorn keep alive or the executor.
+* BM25 index is a pickle on disk. Two parallel ingestion runs will race. One wins and the other chunks vanish from keyword search until the next rebuild.
+* Legacy chunks with fiscal year zero silently bypass the year filter. There is a one shot repair function but it needs a manual run.
+* Reranker is just an RRF passthrough. The CrossEncoder import was killing startup time so the class is stubbed. I will plug a real one in once we have a GPU box.
+* yfinance returns empty info randomly. There is no caching either so every analysis fetches the data again.
+* Anthropic spend is not bounded per query. Cost runs roughly 10 to 30 cents per analysis depending on the retry count.
+* Top nav links got reduced to Overview only. The Data Sources and User Guide pages were never built.
